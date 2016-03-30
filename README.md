@@ -6,6 +6,6 @@ Available models
 - conic model with or without polynomial distortion
 - spheric model
 
-## dependendies 
-TinyXML
+## Dependencies 
+[TinyXML](https://sourceforge.net/projects/tinyxml/)
 
