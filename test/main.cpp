@@ -3,6 +3,11 @@
 
 int main(int argc, char **argv)
 {
+    if(argc<3)
+    {
+        std::cout << "Usage: " << argv[0] << " input.ori.xml output.ori.xml" << std::endl;
+        return 1;
+    }
     Ori ori;
     std::string in (argv[1]);
     std::string out(argv[2]);
@@ -29,4 +34,5 @@ int main(int argc, char **argv)
 
     ok = ori.ImageAndDepthToGround(c,l,1.,x,y,z);
     std::cout << ok << " : " << x << "," << y << "," << z << " : " << c << "," << l << std::endl;
+    return 0;
 }
