@@ -7,8 +7,8 @@ class TiXmlNode;
 class ExtrinsicModel
 {
 public:
-    bool GroundToImage(double xt, double yt, double zt, double &xi, double &yi, double &zi) const;
-    bool ImageToGround(double xi, double yi, double zi, double &xt, double &yt, double &zt) const;
+    bool GroundToImage(double xg, double yg, double zg, double &xi, double &yi, double &zi) const;
+    bool ImageToGround(double xi, double yi, double zi, double &xg, double &yg, double &zg) const;
 
     bool Read(TiXmlNode* node);
     bool Write(std::ostream& out) const;

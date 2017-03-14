@@ -1,25 +1,26 @@
 #include <sstream>
 #include <cmath>
+#include <iostream>
 
 #include "ExtrinsicModel.hpp"
 #include "xml.hpp"
 
-bool ExtrinsicModel::GroundToImage(double xt, double yt, double zt, double &xi, double &yi, double &zi) const
+bool ExtrinsicModel::GroundToImage(double xg, double yg, double zg, double &xi, double &yi, double &zi) const
 {
-    xt -= m_sommet[0];
-    yt -= m_sommet[1];
-    zt -= m_sommet[2];
-    xi = m_rotation[0] * xt + m_rotation[1] * yt + m_rotation[2] * zt;
-    yi = m_rotation[3] * xt + m_rotation[4] * yt + m_rotation[5] * zt;
-    zi = m_rotation[6] * xt + m_rotation[7] * yt + m_rotation[8] * zt;
+    xg -= m_sommet[0];
+    yg -= m_sommet[1];
+    zg -= m_sommet[2];
+    xi = m_rotation[0] * xg + m_rotation[1] * yg + m_rotation[2] * zg;
+    yi = m_rotation[3] * xg + m_rotation[4] * yg + m_rotation[5] * zg;
+    zi = m_rotation[6] * xg + m_rotation[7] * yg + m_rotation[8] * zg;
     return true;
 }
 
-bool ExtrinsicModel::ImageToGround(double xi, double yi, double zi, double &xt, double &yt, double &zt) const
+bool ExtrinsicModel::ImageToGround(double xi, double yi, double zi, double &xg, double &yg, double &zg) const
 {
-    xt = m_rotation[0] * xi + m_rotation[3] * yi + m_rotation[6] * zi + m_sommet[0];
-    yt = m_rotation[1] * xi + m_rotation[4] * yi + m_rotation[7] * zi + m_sommet[1];
-    zt = m_rotation[2] * xi + m_rotation[5] * yi + m_rotation[8] * zi + m_sommet[2];
+    xg = m_rotation[0] * xi + m_rotation[3] * yi + m_rotation[6] * zi + m_sommet[0];
+    yg = m_rotation[1] * xi + m_rotation[4] * yi + m_rotation[7] * zi + m_sommet[1];
+    zg = m_rotation[2] * xi + m_rotation[5] * yi + m_rotation[8] * zi + m_sommet[2];
     return true;
 }
 
@@ -76,7 +77,7 @@ bool ExtrinsicModel::Read(TiXmlNode* node)
         m_rotation[6] = ReadNodeAs<double>(pt3d,"x");
         m_rotation[7] = ReadNodeAs<double>(pt3d,"y");
         m_rotation[8] = ReadNodeAs<double>(pt3d,"z");
-	
+
     }
     return true;
 }

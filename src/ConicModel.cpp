@@ -26,13 +26,24 @@ bool ConicModel::GroundToImage(double x, double y, double z, double &c, double &
     return (!m_distortion) || m_distortion->ApplyGroundToImage(c,l);
 }
 //-----------------------------------------------------------------------------
+bool ConicModel::GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const
+{
+    if(z<=0) return false;
+    double t = m_focal / z;
+    c = m_cPPA + x*t;
+    l = m_lPPA + y*t;
+    d = z;
+
+    return (!m_distortion) || m_distortion->ApplyGroundToImage(c,l);
+}
+//-----------------------------------------------------------------------------
 bool ConicModel::ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const
 {
-    if(m_distortion && !m_distortion->ApplyImageToGround(c,l)) return false;
+    if(m_distortion && !m_distortion->ApplyImageToGround(c,l) || m_focal == 0.) return false;
     x0=y0=z0=0.;
-    x1 = c - m_cPPA;
-    y1 = l - m_lPPA;
-    z1 = m_focal;
+    x1 = (c - m_cPPA)/m_focal;
+    y1 = (l - m_lPPA)/m_focal;
+    z1 = 1.;
     return true;
 }
 

@@ -15,6 +15,7 @@ public:
     ~ConicModel();
 
     bool GroundToImage(double x, double y, double z, double &c, double &l) const;
+    bool GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const;
     bool ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const;
 
     bool Read(TiXmlNode* node);

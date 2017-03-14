@@ -27,6 +27,10 @@ public:
     /// returns false if the point does not project to the image
     bool GroundToImage( double x, double y, double z, double &c, double &l ) const;
 
+    /// Gets the (c,l) image coordinates and the depth d of a 3D point of coordinates (x,y,z)
+    /// returns false if the point does not project to the image
+    bool GroundToImageAndDepth( double x, double y, double z, double &c, double &l, double& d ) const;
+
     /// for a point at image coordinates (c,l) gives the projection center and 3D coordinates of the corresponding point in focal plane
     bool ImageToGroundVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const;
 

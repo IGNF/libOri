@@ -14,6 +14,7 @@ public:
     virtual bool Write(std::ostream& out) const = 0;
 
     virtual bool GroundToImage(double x, double y, double z, double &c, double &l) const = 0;
+    virtual bool GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const = 0;
     virtual bool ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const = 0;
 
     unsigned int width() const { return m_width; }
