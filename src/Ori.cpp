@@ -3,10 +3,8 @@
 #include <cmath>
 #include <fstream>
 
-#include "ConicModel.hpp"
-#include "SphericModel.hpp"
 #include "Ori.hpp"
-#include "xml.hpp"
+#include "IntrinsicModel.hpp"
 
 //-----------------------------------------------------------------------------
 Ori::Ori() : m_intrinsic(NULL) {}
@@ -22,34 +20,35 @@ Ori::~Ori()
     if ( m_intrinsic ) delete m_intrinsic;
 }
 //-----------------------------------------------------------------------------
+
+#if HAVE_XML
+#include "xml.hpp"
+#include "ConicModel.hpp"
+#include "SphericModel.hpp"
+
 bool Ori::Read( const std::string &file )
 {
-    TiXmlDocument* doc = XmlOpen(file);
-    if(!doc) return false;
-    TiXmlNode* root = XmlRoot(doc,"orientation");
-    bool ok = (root!=NULL);
+    XmlDoc doc(file);
+    TiXmlNode* root = doc.root("orientation");
+    if(!root) return false;
 
     std::string versionNode = ReadNodeAsString(root,"version");
-    if ( ok && versionNode != "1.0" )
+    if ( versionNode != "1.0" )
     {
-        std::cerr  << "ERROR: Ori 'version' MUST be '1.0' ! Value is '" << versionNode << "'." << std::endl;
-        ok = false;
+      std::cerr  << "ERROR: Ori 'version' MUST be '1.0' ! Value is '" << versionNode << "'." << std::endl;
+      return false;
     }
 
     TiXmlNode* geometry = FindNode(root,"geometry");
     TiXmlNode* extrinsic = FindNode(geometry,"extrinseque");
-    ok &= m_extrinsic.Read(extrinsic);
+    if(! m_extrinsic.Read(extrinsic))
+      return false;
 
     TiXmlNode* intrinsic =  FindNode(geometry,"intrinseque");
-    if(FindNode(intrinsic,"spherique"))
-        m_intrinsic = new SphericModel();
-    else
-        m_intrinsic = new ConicModel();
+    if(! (m_intrinsic = IntrinsicModel::New(intrinsic) ) )
+      return false;
 
-    ok &= m_intrinsic->Read(intrinsic);
-
-    XmlClose(doc);
-    return ok;
+    return true;
 }
 //-----------------------------------------------------------------------------
 bool Ori::Write(const std::string& filename) const
@@ -73,6 +72,43 @@ bool Ori::Write(std::ostream& out) const
     out << "</orientation>" << std::endl;
     return ok && out.good();
 }
+//-----------------------------------------------------------------------------
+
+#endif // HAVE_XML
+
+#if HAVE_JSON
+#include <json/json.h>
+
+bool Ori::Read (
+      const std::string &camera_filename, int camera_id,
+      const std::string &panoramic_filename, int panoramic_id
+)
+{
+    Json::Value camera;   // will contains the camera root value after parsing.
+    Json::Value panoramic;   // will contains the panoramic root value after parsing.
+    Json::Reader reader;
+    std::ifstream camera_file(camera_filename.c_str(), std::ifstream::binary);
+    if(!(camera_file.good() && reader.parse( camera_file, camera, false )))
+    {
+      std::cerr << "Error reading " << camera_filename <<"\n";
+      std::cerr << reader.getFormatedErrorMessages() << "\n";
+      return false;
+    }
+    std::ifstream panoramic_file(panoramic_filename.c_str(), std::ifstream::binary);
+    if(!(panoramic_file.good() && reader.parse( panoramic_file, panoramic, false )))
+    {
+      std::cerr << "Error reading " << panoramic_filename <<"\n";
+      std::cerr << reader.getFormatedErrorMessages() << "\n";
+      return false;
+    }
+    double position[3];
+    double rotation[9];
+    int orientation;
+    m_intrinsic = IntrinsicModel::New(camera[camera_id],position,rotation,orientation);
+    return m_intrinsic!=NULL && m_extrinsic.Read(panoramic[panoramic_id],position,rotation,orientation);
+}
+#endif // HAVE_JSON
+
 //-----------------------------------------------------------------------------
 bool Ori::GroundToImage( double x, double y, double z, double &c, double &l ) const
 {

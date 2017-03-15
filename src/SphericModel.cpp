@@ -37,6 +37,7 @@ bool SphericModel::ImageToVec(double c, double l, double &x0, double &y0, double
 	z1 = sin(phi);
         return true;
 }
+#if HAVE_XML
 //-----------------------------------------------------------------------------
 bool SphericModel::Read(TiXmlNode* node)
 {
@@ -97,3 +98,12 @@ bool SphericModel::Write(std::ostream& out) const
 
     return out.good();
 }
+#endif // HAVE_XML
+
+#if HAVE_JSON
+bool SphericModel::Read(const Json::Value& json, double position[3], double rotation[9], int& orientation)
+{
+    std::cerr << "no JSON spherical model" << std::endl;
+    return false;
+}
+#endif // HAVE_JSON

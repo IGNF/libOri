@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "ExtrinsicModel.hpp"
-#include "xml.hpp"
 
 bool ExtrinsicModel::GroundToImage(double xg, double yg, double zg, double &xi, double &yi, double &zi) const
 {
@@ -23,6 +22,10 @@ bool ExtrinsicModel::ImageToGround(double xi, double yi, double zi, double &xg, 
     zg = m_rotation[2] * xi + m_rotation[5] * yi + m_rotation[8] * zi + m_sommet[2];
     return true;
 }
+
+
+#if HAVE_XML
+#include "xml.hpp"
 
 bool ExtrinsicModel::Read(TiXmlNode* node)
 {
@@ -136,3 +139,26 @@ bool ExtrinsicModel::Write(std::ostream& out) const
 
     return out.good();
 }
+
+#endif // HAVE_XML
+
+#if HAVE_JSON
+#include <json/json.h>
+
+bool ExtrinsicModel::Read(const Json::Value& json, const double position[3], const double rotation[9], int orientation)
+{
+  m_sommet[0] = json["easting"].asDouble();
+  m_sommet[1] = json["northing"].asDouble();
+  m_sommet[2] = json["altitude"].asDouble();
+
+  double roll    = json["roll"   ].asDouble();
+  double pitch   = json["pitch"  ].asDouble();
+  double heading = json["heading"].asDouble();
+
+  // todo: convert roll/pitch/heading and rotation to rotation matrix...
+  // orientation and position
+std::cout << orientation;
+
+  return true;
+}
+#endif // HAVE_JSON

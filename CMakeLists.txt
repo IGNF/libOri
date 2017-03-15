@@ -1,16 +1,35 @@
 project(Ori)
 cmake_minimum_required(VERSION 2.6)
-find_package(TinyXML REQUIRED)
-include_directories(${TinyXML_INCLUDE_DIRS})
 
-set(Ori_DEFINITIONS ${TinyXML_DEFINITIONS})
-set(Ori_LIBRARIES Ori ${TinyXML_LIBRARY})
+set(Ori_LIBRARIES Ori)
+set(Ori_DEFINITIONS "")
+
+find_package(TinyXML)
+if(TinyXML_FOUND)
+  message(STATUS "TinyXML found")
+  include_directories(${TinyXML_INCLUDE_DIRS})
+  set(Ori_DEFINITIONS ${Ori_DEFINITIONS} ${TinyXML_DEFINITIONS} "-DHAVE_XML=1")
+  set(Ori_LIBRARIES ${Ori_LIBRARIES}  ${TinyXML_LIBRARY})
+endif()
+
+find_package(PkgConfig)
+if(PKG_CONFIG_FOUND)
+  pkg_check_modules(JSONCPP jsoncpp)
+  if(JSONCPP_FOUND)
+    message(STATUS "JSONCPP found")
+    include_directories(${JSONCPP_INCLUDE_DIRS})
+    set(Ori_DEFINITIONS ${Ori_DEFINITIONS} ${JSONCPP_DEFINITIONS} "-DHAVE_JSON=1")
+    set(Ori_LIBRARIES ${Ori_LIBRARIES} ${JSONCPP_LIBRARIES})
+  endif()
+endif()
+
 
 add_definitions(${Ori_DEFINITIONS})
 
 set(CPPS
     src/Ori.cpp
     src/ExtrinsicModel.cpp
+    src/IntrinsicModel.cpp
     src/ConicModel.cpp
     src/SphericModel.cpp
     src/DistortionPolynom.cpp
@@ -49,4 +68,3 @@ install (EXPORT Ori-targets DESTINATION ${CMAKE_INSTALL_PREFIX}/cmake)
 configure_file(OriConfig.cmake.in ${CMAKE_BINARY_DIR}/OriConfig.cmake.in2 @ONLY)
 configure_file(${CMAKE_BINARY_DIR}/OriConfig.cmake.in2 ${CMAKE_BINARY_DIR}/OriConfig.cmake @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/OriConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/cmake)
-

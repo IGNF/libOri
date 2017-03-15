@@ -12,6 +12,8 @@ int main(int argc, char **argv)
     std::string in (argv[1]);
     std::string out(argv[2]);
 
+    ori.Read ("../test/data/cameraCalibration.json",0,"../test/data/panoramicsMetaData.json",0 );
+
     ori.Read (in );
     ori.Write(out);
 

@@ -1,7 +1,6 @@
 #include <sstream>
 #include <cmath>
 #include "ConicModel.hpp"
-#include "xml.hpp"
 
 //-----------------------------------------------------------------------------
 ConicModel::ConicModel(const ConicModel &mod)
@@ -46,6 +45,9 @@ bool ConicModel::ImageToVec(double c, double l, double &x0, double &y0, double &
     z1 = 1.;
     return true;
 }
+
+#if HAVE_XML
+#include "xml.hpp"
 
 //-----------------------------------------------------------------------------
 bool ConicModel::Read(TiXmlNode* node)
@@ -103,3 +105,35 @@ bool ConicModel::Write(std::ostream& out) const
 
     return out.good();
 }
+
+#endif // HAVE_XML
+
+#if HAVE_JSON
+#include <json/json.h>
+
+bool ConicModel::Read(const Json::Value& json, double position[3], double rotation[9], int& orientation)
+{
+    std::cout << json  << "\n";
+
+    m_width = json["size"][0].asUInt();
+    m_height= json["size"][1].asUInt();
+
+    m_cPPA = json["projection"][2].asDouble();
+    m_lPPA = json["projection"][5].asDouble();
+    m_focal= json["projection"][0].asDouble();
+
+    for(int i=0; i<3; ++i)
+      position[i] = json["position"][i].asDouble();
+    for(int i=0; i<9; ++i)
+      rotation[i] = json["rotation"][i].asDouble();
+    orientation = json["orientation"].asInt();
+
+    if(m_distortion) delete m_distortion;
+    if(json.isMember("distortion"))
+    {
+        m_distortion = new DistortionPolynom;
+        m_distortion->Read(json["distortion"]);
+    }
+    return true;
+}
+#endif // HAVE_JSON

@@ -3,6 +3,7 @@
 
 #include <ostream>
 class TiXmlNode;
+namespace Json { class Value; }
 
 class DistortionPolynom
 {
@@ -10,8 +11,14 @@ public:
     bool ApplyGroundToImage(double &column, double &line ) const;
     bool ApplyImageToGround(double &column, double &line ) const;
 
-    bool Write(std::ostream& out) const;
+#if HAVE_XML
     bool Read(TiXmlNode* node);
+    bool Write(std::ostream& out) const;
+#endif
+
+#if HAVE_JSON
+    bool Read(const Json::Value& json);
+#endif
 
     double r3() const { return m_cr3; }
     double r5() const { return m_cr5; }
