@@ -4,6 +4,7 @@
 #include "IntrinsicModel.hpp"
 #include "DistortionPolynom.hpp"
 class TiXmlNode;
+namespace Json { class Value; }
 
 class ConicModel : public IntrinsicModel
 {
@@ -15,10 +16,17 @@ public:
     ~ConicModel();
 
     bool GroundToImage(double x, double y, double z, double &c, double &l) const;
+    bool GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const;
     bool ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const;
 
+#if HAVE_XML
     bool Read(TiXmlNode* node);
     bool Write(std::ostream& out) const;
+#endif
+
+#if HAVE_JSON
+    bool Read(const Json::Value& json, double position[3], double rotation[9], int& orientation);
+#endif
 
     double focal() const { return m_focal; }
     void focal(double f) { m_focal = f; }

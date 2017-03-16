@@ -1,26 +1,30 @@
+#if HAVE_XML
+
 #include "tinyxml.h"
 #include <sstream>
 #include <iostream>
 #include "xml.hpp"
 
-TiXmlDocument* XmlOpen(const std::string& filename)
+XmlDoc::XmlDoc(const std::string& filename)
 {
-    TiXmlDocument *doc = new TiXmlDocument( filename.c_str() );
-    if ( doc->LoadFile() ) return doc;
-    std::cerr << "ERROR: Unable to open file " << filename << " !" << std::endl;
-    delete doc;
-    return NULL;
+    m_doc = new TiXmlDocument( filename.c_str() );
+    if ( ! m_doc->LoadFile() )
+    {
+      delete m_doc;
+      m_doc = NULL;
+      std::cerr << "ERROR: Unable to open file " << filename << " !" << std::endl;
+    }
 }
 
-void XmlClose(TiXmlDocument* doc)
+XmlDoc::~XmlDoc()
 {
-    if (doc) delete doc;
+    if (m_doc) delete m_doc;
 }
 
-TiXmlNode* XmlRoot(TiXmlDocument *doc, const std::string& tag)
+TiXmlNode* XmlDoc::root(const std::string& tag)
 {
-    if(!doc) return NULL;
-    TiXmlNode* root = doc->RootElement();
+    if(!m_doc) return NULL;
+    TiXmlNode* root = m_doc->RootElement();
     std::string filetag = root->Value();
     if(filetag==tag) return root;
     std::cerr << "ERROR: Main tag is "<< filetag<< " ! (should be "<< tag << ")" << std::endl;
@@ -38,3 +42,5 @@ std::string ReadNodeAsString(TiXmlNode* node, const std::string& nodename)
     const char* val = (n) ? n->ToElement()->GetText() : "";
     return val;
 }
+
+#endif // HAVE_XML

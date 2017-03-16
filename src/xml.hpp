@@ -1,3 +1,4 @@
+#if HAVE_XML
 #ifndef XML_HPP
 #define XML_HPP
 
@@ -5,10 +6,17 @@
 class TiXmlNode;
 class TiXmlDocument;
 
-TiXmlDocument* XmlOpen(const std::string& filename);
-void XmlClose(TiXmlDocument* doc);
+class XmlDoc
+{
+public:
+  XmlDoc(const std::string& filename);
+  ~XmlDoc();
 
-TiXmlNode* XmlRoot(TiXmlDocument *doc, const std::string& tag);
+  TiXmlNode* root(const std::string& tag);
+
+private:
+  TiXmlDocument *m_doc;
+};
 
 TiXmlNode* FindNode(TiXmlNode* node, const std::string& nodename);
 
@@ -24,4 +32,6 @@ template <typename T>
     return res;
 }
 
+
 #endif // XML_HPP
+#endif // HAVE_XML

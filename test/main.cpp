@@ -12,6 +12,9 @@ int main(int argc, char **argv)
     std::string in (argv[1]);
     std::string out(argv[2]);
 
+#if HAVE_JSON
+    ori.Read ("../test/data/cameraCalibration.json",0,"../test/data/panoramicsMetaData.json",0 );
+#endif
     ori.Read (in );
     ori.Write(out);
 
@@ -20,19 +23,27 @@ int main(int argc, char **argv)
     double z = 0;
     double c = 10;
     double l = 100;
+    double d = 10;
 
-    std::cout.precision(21);
+    std::cout.precision(4);
 
     bool ok = true;
-    std::cout << ok << " : " << x << "," << y << "," << z << " : " << c << "," << l << std::endl;
+    std::cout << ok << " : xyz=(" << x << "," << y << "," << z << "), cld=(" << c << "," << l << "," << d << ")" << std::endl;
 
-    ok = ori.ImageAndDepthToGround(c,l,1.,x,y,z);
-    std::cout << ok << " : " << x << "," << y << "," << z << " : " << c << "," << l << std::endl;
+    ok = ori.ImageAndDepthToGround(c,l,d,x,y,z);
+    std::cout << ok << " : xyz=(" << x << "," << y << "," << z << "), cld=(" << c << "," << l << "," << d << ")" << std::endl;
 
+    c = l = d = 0;
     ok = ori.GroundToImage(x,y,z,c,l);
-    std::cout << ok << " : " << x << "," << y << "," << z << " : " << c << "," << l << std::endl;
+    std::cout << ok << " : xyz=(" << x << "," << y << "," << z << "), cl=(" << c << "," << l << ")" << std::endl;
 
-    ok = ori.ImageAndDepthToGround(c,l,1.,x,y,z);
-    std::cout << ok << " : " << x << "," << y << "," << z << " : " << c << "," << l << std::endl;
+    c = l = d = 0;
+    ok = ori.GroundToImageAndDepth(x,y,z,c,l,d);
+    std::cout << ok << " : xyz=(" << x << "," << y << "," << z << "), cld=(" << c << "," << l << "," << d << ")" << std::endl;
+
+    x = y = z = 0;
+    ok = ori.ImageAndDepthToGround(c,l,d,x,y,z);
+    std::cout << ok << " : xyz=(" << x << "," << y << "," << z << "), cld=(" << c << "," << l << "," << d << ")" << std::endl;
+
     return 0;
 }

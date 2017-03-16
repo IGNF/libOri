@@ -4,7 +4,6 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
-#include "xml.hpp"
 
 #include "DistortionPolynom.hpp"
 #define DPIGN_ERR2MAX 1e-15
@@ -138,6 +137,15 @@ bool DistortionPolynom::ApplyGroundToImage(double &column, double &line) const
     return true;
 }
 
+void DistortionPolynom::update()
+{
+    m_r2_max = first_cubic_root(7*m_cr7,5*m_cr5,3*m_cr3,1);
+}
+
+
+#if HAVE_XML
+#include "xml.hpp"
+
 //-----------------------------------------------------------------------------
 bool DistortionPolynom::Write(std::ostream& out) const
 {
@@ -165,10 +173,6 @@ bool DistortionPolynom::Write(std::ostream& out) const
     return out.good();
 }
 
-void DistortionPolynom::update()
-{
-    m_r2_max = first_cubic_root(7*m_cr7,5*m_cr5,3*m_cr3,1);
-}
 
 //-----------------------------------------------------------------------------
 bool DistortionPolynom::Read(TiXmlNode* node)
@@ -183,3 +187,20 @@ bool DistortionPolynom::Read(TiXmlNode* node)
     update();
     return true;
 }
+
+#endif // HAVE_XML
+
+#if HAVE_JSON
+#include <json/json.h>
+
+bool DistortionPolynom::Read(const Json::Value& json)
+{
+    m_xPPS = json["pps"][0].asDouble();
+    m_yPPS = json["pps"][0].asDouble();
+    m_cr3  = json["poly357"][0].asDouble();
+    m_cr5  = json["poly357"][1].asDouble();
+    m_cr7  = json["poly357"][2].asDouble();
+    update();
+    return true;
+}
+#endif // HAVE_JSON

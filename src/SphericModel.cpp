@@ -15,6 +15,16 @@ bool SphericModel::GroundToImage(double x, double y, double z, double &c, double
         return true;
 }
 //-----------------------------------------------------------------------------
+bool SphericModel::GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const
+{
+        d   = sqrt(x*x + y*y + z*z);
+        double lambda = m_lambdaMax - atan2(y,x);
+        double phi    = m_phiMax    - acos(z/d);
+	c = m_width * lambda / (m_lambdaMax - m_lambdaMin );
+	l = m_lPPA - m_height * phi / (m_phiMax - m_phiMin );
+        return true;
+}
+//-----------------------------------------------------------------------------
 bool SphericModel::ImageToVec(double c, double l, double &x0, double &y0, double &z0,
 		double &x1, double &y1, double &z1) const
 {
@@ -27,6 +37,7 @@ bool SphericModel::ImageToVec(double c, double l, double &x0, double &y0, double
 	z1 = sin(phi);
         return true;
 }
+#if HAVE_XML
 //-----------------------------------------------------------------------------
 bool SphericModel::Read(TiXmlNode* node)
 {
@@ -40,11 +51,11 @@ bool SphericModel::Read(TiXmlNode* node)
         m_lambdaMax= ReadNodeAs<double>(frame, "lambda_max");
         m_phiMin   = ReadNodeAs<double>(frame, "phi_min");
         m_phiMax   = ReadNodeAs<double>(frame, "phi_max");
-	
+
         TiXmlNode* ppa = FindNode(spherique,"ppa");
         m_cPPA = ReadNodeAs<double>(ppa, "c");
         m_lPPA = ReadNodeAs<double>(ppa, "l");
-	
+
 	return true;
 }
 //-----------------------------------------------------------------------------
@@ -87,3 +98,12 @@ bool SphericModel::Write(std::ostream& out) const
 
     return out.good();
 }
+#endif // HAVE_XML
+
+#if HAVE_JSON
+bool SphericModel::Read(const Json::Value& json, double position[3], double rotation[9], int& orientation)
+{
+    std::cerr << "no JSON spherical model" << std::endl;
+    return false;
+}
+#endif // HAVE_JSON

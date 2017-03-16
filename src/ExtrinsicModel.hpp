@@ -2,16 +2,24 @@
 #define __EXTRINSIC_MODEL_HPP__
 
 class TiXmlNode;
+namespace Json { class Value; }
+
 #include <ostream>
 
 class ExtrinsicModel
 {
 public:
-    bool GroundToImage(double xt, double yt, double zt, double &xi, double &yi, double &zi) const;
-    bool ImageToGround(double xi, double yi, double zi, double &xt, double &yt, double &zt) const;
+    bool GroundToImage(double xg, double yg, double zg, double &xi, double &yi, double &zi) const;
+    bool ImageToGround(double xi, double yi, double zi, double &xg, double &yg, double &zg) const;
 
+#if HAVE_XML
     bool Read(TiXmlNode* node);
     bool Write(std::ostream& out) const;
+#endif
+
+#if HAVE_JSON
+    bool Read(const Json::Value& json, const double position[3], const double rotation[9], int orientation);
+#endif
 
     double *sommet() { return m_sommet; }
     const double *sommet() const { return m_sommet; }

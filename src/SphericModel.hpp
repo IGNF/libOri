@@ -6,10 +6,18 @@
 class SphericModel : public IntrinsicModel
 {
 public:
-    bool Read(TiXmlNode* node);
-    bool Write(std::ostream& out) const;
+
+  #if HAVE_XML
+      bool Read(TiXmlNode* node);
+      bool Write(std::ostream& out) const;
+  #endif
+
+  #if HAVE_JSON
+      bool Read(const Json::Value& json, double position[3], double rotation[9], int& orientation);
+  #endif
 
     bool GroundToImage(double x, double y, double z, double &c, double &l) const;
+    bool GroundToImageAndDepth(double x, double y, double z, double &c, double &l, double &d) const;
     bool ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1,double &z1) const;
 
     virtual SphericModel * Clone() const { return new SphericModel(*this); }
