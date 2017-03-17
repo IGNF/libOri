@@ -38,7 +38,9 @@ bool ConicModel::GroundToImageAndDepth(double x, double y, double z, double &c, 
 //-----------------------------------------------------------------------------
 bool ConicModel::ImageToVec(double c, double l, double &x0, double &y0, double &z0, double &x1, double &y1, double &z1) const
 {
-    if(m_distortion && !m_distortion->ApplyImageToGround(c,l) || m_focal == 0.) return false;
+    if((m_distortion && !m_distortion->ApplyImageToGround(c,l)) || m_focal == 0.)
+        return false;
+
     x0=y0=z0=0.;
     x1 = (c - m_cPPA)/m_focal;
     y1 = (l - m_lPPA)/m_focal;
