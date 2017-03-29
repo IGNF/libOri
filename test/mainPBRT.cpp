@@ -1,5 +1,6 @@
 #include "../src/Ori.hpp"
 #include "../src/IntrinsicModel.hpp"
+#include "PlyHeaderParser.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -16,15 +17,15 @@ using namespace std;
 #define epsilon 1.e-3 // avoid numerical precision issues
 
 // default logging macro (no ; at end to force user using common function syntax)
-//#define LOG(txt) cout << "[" << __FUNCTION__ << "] " << txt
-#define LOG(txt) cout << txt
+#define ERR(txt) {cout << "[" << __FUNCTION__ << "] ERROR: " << txt << endl; return false;}
+#define LOG(txt) {cout << txt;}
 
 struct ColoredPoint : public Point
 {
     unsigned char r,g,b;
     ColoredPoint(Point P, unsigned char r_=0, unsigned char g_=0, unsigned char b_=0):
         Point(P), r(r_),g(g_),b(b_){}
-    ColoredPoint(float x, float y, float z, unsigned char r_=0, unsigned char g_=0, unsigned char b_=0):
+    ColoredPoint(float x=0.f, float y=0.f, float z=0.f, unsigned char r_=0, unsigned char g_=0, unsigned char b_=0):
         Point(x,y,z), r(r_),g(g_),b(b_){}
 };
 
@@ -53,11 +54,11 @@ bool DoIntersect(const Ray &r, Point A, Point B, Point C,
     gamma = inv_norm*Dot(AI,ABorth);
     beta = -inv_norm*Dot(AI,ACorth);
     return (beta>-epsilon && gamma>=-epsilon && (beta+gamma)<1.f+epsilon);
-//    Vector nA = Cross(n,AB);
-//    Vector nB = Cross(n,BC);
-//    Vector nC = Cross(n,CA);
-//    // if ray intersection with plane is inside the triangle
-//    return (Dot(I - A,nA)>0.f && Dot(I - B,nB)>0.f && Dot(I - C,nC)>0.f);
+    //    Vector nA = Cross(n,AB);
+    //    Vector nB = Cross(n,BC);
+    //    Vector nC = Cross(n,CA);
+    //    // if ray intersection with plane is inside the triangle
+    //    return (Dot(I - A,nA)>0.f && Dot(I - B,nB)>0.f && Dot(I - C,nC)>0.f);
 }
 
 class  KdTreeTriangle : public Primitive
@@ -123,7 +124,7 @@ public:
     BSSRDF *GetBSSRDF(const DifferentialGeometry &dg, const Transform &ObjectToWorld, MemoryArena &arena) const {return (BSSRDF*)NULL;}
 };
 
-void RobustGetLine(ifstream & ifs, string & line)
+inline void RobustGetLine(ifstream & ifs, string & line)
 {
     getline(ifs, line);
     if(line[line.size()-1] == '\r')
@@ -140,128 +141,92 @@ bool loadPly(const string &filepath,
              vector<Reference<Primitive> > & prims,
              Point & pivot)
 {
-    // open file
-    ifstream ifs(filepath.c_str());
-    if(!ifs.good()) {LOG("ERROR: Failed to open " << filepath); return false;}
-    string line, format="unknown";
-    unsigned int n_vertex=0, n_tri=0;
-    RobustGetLine(ifs, line);
-    { // line == "ply" does not always work (weird char at end of line)
-        istringstream iss(line);
-        string word;
-        iss >> word;
-        if(word != "ply") LOG("not a PLY file: starts with " << word << "\n");
-    }
-    LOG("Loading ply header from " << filepath);
-    int i_line=0;
-    bool end_reached = false;
-    string element="", property="";
-    while(!ifs.eof() && !end_reached && i_line++<1000)
-    {
-        RobustGetLine(ifs, line);
-        LOG(line);
-        istringstream iss(line);
-        string word="";
-        iss >> word;
-        if(word == "format")
-        {
-            if(line == "format binary_little_endian 1.0") format = "binary_little_endian";
-            else if(line == "format ascii 1.0") format = "ascii";
-            else LOG("->only binary_little_endian and ascii 1.0 formats supported, use at your own risks");
-        }
-        else if(word == "comment")
-        {
-            iss >> word;
-            if(word == "IGN")
-            {
-                iss >> word;
-                if(word == "offset" || word == "Offset")
-                {
-                    iss >> word;
-                    if(word == "GPS")
-                    {
-                        LOG("->GPS Offset not handled");
-                    }
-                    else if(word == "Pos")
-                    {
-                        double tz=0.;
-                        iss >> pivot.x >> pivot.y >> pivot.z;
-                        LOG("->tx=" << pivot.x << ", ty=" << pivot.y << ", tz=" << pivot.z);
-                    }
-                    else LOG("->unknown IGN Offset");
-                }
-                else LOG("->unknown IGN comment");
-            }
-            else LOG("->unknown comment");
-        }
-        else if(word == "element")
-        {
-            iss >> element;
-            if(element == "vertex")
-            {
-                iss >> n_vertex;
-                LOG("->n_vertex=" << n_vertex);
-            }
-            else if(element == "face")
-            {
-                iss >> n_tri;
-                LOG("->data_size=" << n_tri);
-            }
-            else
-            {
-                LOG("->only vertex and triangle supported, the following will be ignored");
-            }
-        }
-        else if(word == "property")
-        {
-            iss >> property >> property;
-            if(property=="x" || property=="y" || property=="z" || property=="red" || property=="green" || property=="blue")
-                LOG("->vertex property: should be x,y,z,red,green,blue in consecutive order (not checked but will fail if not)");
-            else
-                LOG("->unhandled vertex property " << property << ": should follow x,y,z,r,g,b (not checked but will fail if not)");
-        }
-        else if(word == "end_header")
-        {
-            LOG("->stopping");
-            end_reached = true;
-        }
-        else
-        {
-            LOG("->not recognized");
-        }
-        LOG(endl);
-    }
+    LOG("Parsing " << filepath);
+    // read header
+    PlyHeader header(filepath);
+    // get Pivot
+    pivot.x = header.m_georef.m_E;
+    pivot.y = header.m_georef.m_N;
+    pivot.z = header.m_georef.m_H;
+    // checks
+    if(header.mv_element.size() != 2) ERR("There should be 2 elements (vertex and face), not " << header.mv_element.size());
+    if(header.mv_element[0].m_name != "vertex") LOG("First element should be named vertex, not " << header.mv_element[0].m_name);
+    if(header.mv_element[1].m_name != "face") LOG("Second element should be named face, not " << header.mv_element[1].m_name);
+    int n_vertex_prop = header.mv_element[0].mv_property.size();
+    int n_face_prop = header.mv_element[1].mv_property.size();
+    if(n_vertex_prop != 6) ERR(n_vertex_prop << "!=6 vertex properties");
+    if(n_face_prop != 1) ERR(n_face_prop << "!=1 face properties");
+    vector<string> vertex_property(6);
+    vertex_property[0] = "x";
+    vertex_property[1] = "y";
+    vertex_property[2] = "z";
+    vertex_property[3] = "red";
+    vertex_property[4] = "green";
+    vertex_property[5] = "blue";
+    for(int i=0; i<6; i++) if(header.mv_element[0].mv_property[i].m_name != vertex_property[i])
+        LOG("vertex property " << i << " should be named " << vertex_property[i] << " not " << header.mv_element[0].mv_property[i].m_name);
 
-    if(format == "ascii") {LOG("ascii not handled"); return false;}
-    else if(format == "binary_little_endian")
+    PlyProperty face_prop = header.mv_element[1].mv_property[0];
+    if(face_prop.m_name != "vertex_indices")
+        LOG("First face property should be named vertex_indices and not " << face_prop.m_name);
+    if(face_prop.m_type != "list" || face_prop.m_list_size_type != "uchar" || face_prop.m_list_elem_type != "int")
+        ERR("First face property should be of type 'list uchar int' and not " <<
+            face_prop.m_type<<" "<<face_prop.m_list_size_type <<" "<<face_prop.m_list_elem_type);
+
+    // all sizes
+    unsigned int n_vertex = header.mv_element[0].m_num, n_tri = header.mv_element[1].m_num;
+    int vertex_size=3*sizeof(float)+3*sizeof(unsigned char), tri_idx_size = sizeof(unsigned char)+3*sizeof(int);
+    const int ptsSize = n_vertex*vertex_size, triSize=n_tri*tri_idx_size, dataSize = ptsSize+triSize;
+
+    int bad_size=0;
+    if(header.m_format.m_name == "ascii")
     {
-        cout << "binary_litte_endian" << endl;
+        LOG("ascii");
+        string line="";
+        ifstream ifs(filepath.c_str());
+        while(line != "end_header" && getline (ifs,line)) ;
+        for(int i=0; i<n_vertex; i++)
+        {
+            ColoredPoint cp;
+            int r,g,b;
+            //getline (ifs,line);
+            //sscanf(line.c_str(),"%f %f %f %u %u %u", &cp.x, &cp.y, & cp.z, &r, &g, &b);
+            ifs >> cp.x >>cp.y >> cp.z >> r >> g >> b;
+            cp.r=r; cp.b=b; cp.g=g;
+            v_pt.push_back(cp);
+        }
+        // triangle indices
+        for(int i=0; i<n_vertex; i++)
+        {
+            unsigned int n,a,b,c;
+            //getline (ifs,line);
+            //sscanf(line.c_str(),"%u %u %u %u", &n, a, c, b);
+            if(n != 3) bad_size++;
+            prims.push_back(Reference<Primitive>(new KdTreeTriangle(a,b,c, &v_pt)));
+        }
         ifs.close();
+    }
+    else if(header.m_format.m_name == "binary_little_endian")
+    {
+        LOG("binary_litte_endian");
         ifstream bin_ifs(filepath.c_str(), ios::binary);
         if(!bin_ifs.good()) {cout << "Failed to open " << filepath << endl; return false;}
         bin_ifs.seekg(0, ios::end);
-        int vertex_size=3*sizeof(float)+3*sizeof(unsigned char), tri_idx_size = sizeof(unsigned char)+3*sizeof(int);
-        const int ptsSize = n_vertex*vertex_size, triSize=n_tri*tri_idx_size, dataSize = ptsSize+triSize;
         LOG("Binary file size: " << bin_ifs.tellg() << " dataSize: " << ptsSize << "+" << triSize << "=" << dataSize << endl);
-        if(bin_ifs.tellg() < dataSize)
-        {
-            LOG("Binary file size " << bin_ifs.tellg() << "< expected: " << dataSize << endl);
-        }
         bin_ifs.seekg(-dataSize, ios::end);
         cout << "Header ends at " << bin_ifs.tellg() << endl;
         for(int i_vertex=0; i_vertex<n_vertex; i_vertex++)
         {
-            float x,y,z;
-            unsigned char r,g,b;
-            bin_ifs.read((char*)&x, sizeof(float));
-            bin_ifs.read((char*)&y, sizeof(float));
-            bin_ifs.read((char*)&z, sizeof(float));
-            bin_ifs.read((char*)&r, sizeof(unsigned char));
-            bin_ifs.read((char*)&g, sizeof(unsigned char));
-            bin_ifs.read((char*)&b, sizeof(unsigned char));
-            v_pt.push_back(ColoredPoint(x,y,z,r,g,b));
+            ColoredPoint cp;
+            bin_ifs.read((char*)&cp.x, sizeof(float));
+            bin_ifs.read((char*)&cp.y, sizeof(float));
+            bin_ifs.read((char*)&cp.z, sizeof(float));
+            bin_ifs.read((char*)&cp.r, sizeof(unsigned char));
+            bin_ifs.read((char*)&cp.g, sizeof(unsigned char));
+            bin_ifs.read((char*)&cp.b, sizeof(unsigned char));
+            v_pt.push_back(cp);
         }
-        int bad_size=0;
+
         for(int i_tri=0; i_tri<n_tri; i_tri++)
         {
             unsigned char n;
@@ -273,8 +238,9 @@ bool loadPly(const string &filepath,
             if(n != 3) bad_size++;
             prims.push_back(Reference<Primitive>(new KdTreeTriangle(a,b,c, &v_pt)));
         }
-        if(bad_size>0) cout << "Unsupported face size " << bad_size << endl;
     }
+    else ERR("Unsupported format " << header.m_format.m_name);
+    if(bad_size>0) LOG("Unsupported face size " << bad_size);
     return true;
 }
 
