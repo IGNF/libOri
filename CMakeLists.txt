@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.6)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules ${CMAKE_MODULE_PATH})
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED yes)
+
 set(Ori_LIBRARIES Ori)
 set(Ori_DEFINITIONS "")
 
@@ -77,6 +80,8 @@ target_link_libraries(testOri ${Ori_LIBRARIES})
 if(PBRT_FOUND AND OpenCV_FOUND)
     add_executable(testPBRT test/mainPBRT.cpp test/PlyHeaderParser.h test/PlyHeaderParser.cpp )
     target_link_libraries(testPBRT ${Ori_LIBRARIES})
+    add_executable(virtualView test/mainVV.cpp test/PlyHeaderParser.h test/cmdparser.hpp test/PlyHeaderParser.cpp )
+    target_link_libraries(virtualView ${Ori_LIBRARIES})
 endif(PBRT_FOUND AND OpenCV_FOUND)
 
 ##############################################################################
