@@ -18,7 +18,6 @@
 
 using namespace std;
 
-//---------------------------------------------
 #define epsilon 1.e-3 // avoid numerical precision issues
 
 // default logging macro (no ; at end to force user using common function syntax)
@@ -255,7 +254,7 @@ void configure_parser(cli::Parser & parser)
     parser.set_optional<int>("th", "N_theta", 8000, "the resulted panoramic width");
     parser.set_optional<int>("ph", "N_phi", 3000, "the resulted panoramic height");
     parser.set_optional<float>("ph_min", "phi_min", -M_PI/6, "PHI lower boundary");
-    parser.set_optional<float>("ph_max", "phi_max", 80.0f * M_PI/180.f, "PHI upper boundary" );
+    parser.set_optional<float>("ph_max", "phi_max", 80.0f * M_PI/180.0f, "PHI upper boundary" );
     parser.set_required<vector<string>>("i", "values", "images_1...N ply_file");
 }
 
